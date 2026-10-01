@@ -1,474 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hydrant Map</title>
 
-    <title>Fire Hydrant Map</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-minimap/3.6.1/Control.MiniMap.css" />
 
-    <!-- Leaflet -->
-    <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
-    />
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-minimap/3.6.1/Control.MiniMap.js"></script>
 
-    <script
-        src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js">
-    </script>
-
-    <!-- Marker Cluster -->
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css"
-    />
-
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css"
-    />
-
-    <script
-        src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js">
-    </script>
-
-    <!-- MiniMap -->
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-minimap/3.6.1/Control.MiniMap.css"
-    />
-
-    <script
-        src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-minimap/3.6.1/Control.MiniMap.js">
-    </script>
-
-    <style>
-        html,
-        body {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
-
-        #map {
-            width: 100%;
-            height: 100%;
-        }
-
-        .legend {
-            position: fixed;
-            bottom: 40px;
-            left: 40px;
-            width: 220px;
-            background: white;
-            border: 2px solid gray;
-            z-index: 9999;
-            font-size: 14px;
-            box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.3);
-            padding: 10px;
-            border-radius: 8px;
-        }
-    </style>
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; }
+    #map { position: absolute; inset: 0; }
+    .legend {
+      position: fixed; bottom: 40px; left: 40px; width: 220px;
+      background: white; border: 2px solid gray; border-radius: 8px;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+      padding: 10px; font: 14px/1.5 sans-serif; z-index: 1000;
+    }
+  </style>
 </head>
-
 <body>
+  <div id="map"></div>
 
-<div id="map"></div>
-
-<div class="legend">
+  <div class="legend">
     <b>Legend</b><br>
-    <span style="color:red;">●</span> Hydrant<br>
+    <span style="color:red;">&#9679;</span> Hydrant<br>
     <span style="color:orange;">━</span> Fire to Hydrant<br>
     🖱️ Click = Simulated Fire
-</div>
+  </div>
 
-<script>
-
-    // ---------------------------------------------------------
-    // HYDRANT COORDINATES
-    // ---------------------------------------------------------
-
-    const hydrants = [
-        [25.72482222222222, -80.279],
-        [25.720238888888886, -80.27885555555555],
-        [25.71531388888889, -80.27687777777777],
-        [25.715891666666668, -80.27619166666666],
-        [25.71963611111111, -80.27716944444444],
-        [25.724802777777775, -80.27900833333334],
-        [25.715155555555555, -80.2786111111111],
-        [25.71992222222222, -80.27982222222222],
-        [25.72443611111111, -80.27804444444445],
-        [25.717216666666666, -80.28015833333333],
-        [25.718241666666664, -80.27490277777778],
-        [25.717594444444444, -80.27433055555555],
-        [25.721319444444443, -80.27706111111111],
-        [25.722355555555556, -80.2809],
-        [25.715708333333332, -80.27788611111112],
-        [25.72211944444444, -80.27651944444445],
-        [25.717441666666666, -80.27984722222222],
-        [25.719616666666663, -80.27696944444445],
-        [25.714291666666664, -80.27816666666666],
-        [25.71686111111111, -80.27869444444444],
-        [25.71631111111111, -80.27832777777778],
-        [25.71479722222222, -80.27749722222222],
-        [25.722111111111108, -80.27883055555556],
-        [25.72211944444444, -80.27651944444445],
-        [25.718791666666664, -80.27570277777778],
-        [25.72275833333333, -80.28088333333334],
-        [25.71381388888889, -80.27881666666667],
-        [25.721208333333333, -80.27967777777778],
-        [25.721002777777777, -80.27542222222222],
-        [25.721005555555553, -80.27542222222222],
-        [25.720152777777777, -80.28031944444444],
-        [25.71821111111111, -80.28119722222222],
-        [25.71555, -80.28317222222222],
-        [25.714480555555554, -80.28330277777778],
-        [25.716949999999997, -80.27625277777777],
-        [25.723355555555553, -80.28002222222221],
-        [25.723422222222222, -80.27999166666666],
-        [25.722455555555555, -80.27849444444445],
-        [25.715988888888887, -80.28246388888888],
-        [25.71751944444444, -80.27781666666667],
-        [25.71608611111111, -80.28292777777777],
-        [25.712369444444445, -80.28067777777778],
-        [25.72274722222222, -80.27965555555555],
-        [25.72387222222222, -80.27957222222223],
-        [25.723744444444442, -80.27844999999999],
-        [25.710822222222223, -80.28269166666666],
-        [25.716730555555554, -80.28305],
-        [25.716091666666667, -80.28317222222222],
-        [25.711516666666665, -80.28173055555555],
-        [25.72272222222222, -80.27970833333333],
-        [25.723852777777775, -80.27959444444444],
-        [25.721991666666664, -80.27873888888888],
-        [25.7213, -80.27714444444445],
-        [25.71339722222222, -80.28335555555556],
-        [25.719247222222222, -80.28156944444444],
-        [25.719994444444442, -80.28096666666667],
-        [25.714108333333332, -80.28328611111111],
-        [25.72131111111111, -80.27713888888889],
-        [25.722394444444443, -80.27741944444445],
-        [25.712663888888887, -80.28326388888888],
-        [25.718825, -80.28131944444445],
-        [25.718441666666664, -80.28214166666666],
-        [25.717641666666665, -80.28273055555556],
-        [25.718094444444443, -80.28189166666667],
-        [25.711955555555555, -80.28317222222222],
-        [25.721444444444444, -80.27935],
-        [25.72382222222222, -80.2784638888889],
-        [25.71593611111111, -80.28035],
-        [25.72210833333333, -80.276475],
-        [25.71515833333333, -80.28012777777778],
-        [25.719608333333333, -80.27698611111111],
-        [25.719605555555553, -80.27698611111111],
-        [25.716341666666665, -80.28021111111111],
-        [25.72116388888889, -80.27979166666667],
-        [25.72210833333333, -80.276475],
-        [25.71844722222222, -80.27646666666666],
-        [25.72272222222222, -80.27617777777778],
-        [25.72232222222222, -80.2767638888889],
-        [25.71816944444444, -80.27485],
-        [25.72273333333333, -80.27619166666666],
-        [25.71758333333333, -80.27554444444445],
-        [25.71616388888889, -80.28055555555555],
-        [25.714783333333333, -80.28006111111111],
-        [25.716347222222222, -80.27722222222222],
-        [25.719572222222222, -80.27694722222222],
-        [25.72177222222222, -80.27469722222222],
-        [25.721799999999998, -80.27468888888889],
-        [25.719677777777775, -80.27707777777778],
-        [25.714133333333333, -80.27966388888889],
-        [25.71693611111111, -80.27626666666667],
-        [25.71448611111111, -80.27941944444444],
-        [25.722891666666666, -80.27555833333334],
-        [25.716675, -80.28057777777778],
-        [25.718241666666664, -80.27490277777778],
-        [25.720255555555553, -80.2788861111111],
-        [25.71878333333333, -80.27581111111111],
-        [25.72298333333333, -80.27576388888889]
-    ];
-
-
-    // ---------------------------------------------------------
-    // CREATE MAP
-    // ---------------------------------------------------------
-
-    const map = L.map("map").setView(
-        [25.7185, -80.2790],
-        16
-    );
-
-
-    // ---------------------------------------------------------
-    // BASE MAP
-    // No API key required
-    // ---------------------------------------------------------
-
-    L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-        {
-            maxZoom: 20,
-            subdomains: "abcd",
-            attribution:
-                '&copy; OpenStreetMap contributors &copy; CARTO'
-        }
-    ).addTo(map);
-
-
-    // ---------------------------------------------------------
-    // HYDRANT CLUSTER
-    // ---------------------------------------------------------
-
-    const hydrantCluster = L.markerClusterGroup();
-
-    hydrants.forEach(function(hydrant, index) {
-
-        const marker = L.circleMarker(
-            hydrant,
-            {
-                radius: 6,
-                color: "red",
-                fillColor: "red",
-                fillOpacity: 0.6,
-                weight: 2
-            }
-        );
-
-        marker.bindPopup(
-            "<b>Fire Hydrant</b><br>" +
-            "Hydrant #" + (index + 1) +
-            "<br>Latitude: " +
-            hydrant[0].toFixed(6) +
-            "<br>Longitude: " +
-            hydrant[1].toFixed(6)
-        );
-
-        hydrantCluster.addLayer(marker);
-    });
-
-    map.addLayer(hydrantCluster);
-
-
-    // ---------------------------------------------------------
-    // HAVERSINE DISTANCE
-    // Returns meters
-    // ---------------------------------------------------------
+  <script>
+    const hydrants = [[25.72482222222222, -80.279], [25.720238888888886, -80.27885555555555], [25.71531388888889, -80.27687777777777], [25.715891666666668, -80.27619166666666], [25.71963611111111, -80.27716944444444], [25.724802777777775, -80.27900833333334], [25.715155555555555, -80.2786111111111], [25.71992222222222, -80.27982222222222], [25.72443611111111, -80.27804444444445], [25.717216666666666, -80.28015833333333], [25.718241666666664, -80.27490277777778], [25.717594444444444, -80.27433055555555], [25.721319444444443, -80.27706111111111], [25.722355555555556, -80.2809], [25.715708333333332, -80.27788611111112], [25.72211944444444, -80.27651944444445], [25.717441666666666, -80.27984722222222], [25.719616666666663, -80.27696944444445], [25.714291666666664, -80.27816666666666], [25.71686111111111, -80.27869444444444], [25.71631111111111, -80.27832777777778], [25.71479722222222, -80.27749722222222], [25.722111111111108, -80.27883055555556], [25.72211944444444, -80.27651944444445], [25.718791666666664, -80.27570277777778], [25.72275833333333, -80.28088333333334], [25.71381388888889, -80.27881666666667], [25.721208333333333, -80.27967777777778], [25.721002777777777, -80.27542222222222], [25.721005555555553, -80.27542222222222], [25.720152777777777, -80.28031944444444], [25.71821111111111, -80.28119722222222], [25.71555, -80.28317222222222], [25.714480555555554, -80.28330277777778], [25.716949999999997, -80.27625277777777], [25.723355555555553, -80.28002222222221], [25.723422222222222, -80.27999166666666], [25.722455555555555, -80.27849444444445], [25.715988888888887, -80.28246388888888], [25.71751944444444, -80.27781666666667], [25.71608611111111, -80.28292777777777], [25.712369444444445, -80.28067777777778], [25.72274722222222, -80.27965555555555], [25.72387222222222, -80.27957222222223], [25.723744444444442, -80.27844999999999], [25.710822222222223, -80.28269166666666], [25.716730555555554, -80.28305], [25.716091666666667, -80.28317222222222], [25.711516666666665, -80.28173055555555], [25.72272222222222, -80.27970833333333], [25.723852777777775, -80.27959444444444], [25.721991666666664, -80.27873888888888], [25.7213, -80.27714444444445], [25.71339722222222, -80.28335555555556], [25.719247222222222, -80.28156944444444], [25.719994444444442, -80.28096666666667], [25.714108333333332, -80.28328611111111], [25.72131111111111, -80.27713888888889], [25.722394444444443, -80.27741944444445], [25.712663888888887, -80.28326388888888], [25.718825, -80.28131944444445], [25.718441666666664, -80.28214166666666], [25.717641666666665, -80.28273055555556], [25.718094444444443, -80.28189166666667], [25.711955555555555, -80.28317222222222], [25.721444444444444, -80.27935], [25.72382222222222, -80.2784638888889], [25.71593611111111, -80.28035], [25.72210833333333, -80.276475], [25.71515833333333, -80.28012777777778], [25.719608333333333, -80.27698611111111], [25.719605555555553, -80.27698611111111], [25.716341666666665, -80.28021111111111], [25.72116388888889, -80.27979166666667], [25.72210833333333, -80.276475], [25.71844722222222, -80.27646666666666], [25.72272222222222, -80.27617777777778], [25.72232222222222, -80.2767638888889], [25.71816944444444, -80.27485], [25.72273333333333, -80.27619166666666], [25.71758333333333, -80.27554444444445], [25.71616388888889, -80.28055555555555], [25.714783333333333, -80.28006111111111], [25.716347222222222, -80.27722222222222], [25.719572222222222, -80.27694722222222], [25.72177222222222, -80.27469722222222], [25.721799999999998, -80.27468888888889], [25.719677777777775, -80.27707777777778], [25.714133333333333, -80.27966388888889], [25.71693611111111, -80.27626666666667], [25.71448611111111, -80.27941944444444], [25.722891666666666, -80.27555833333334], [25.716675, -80.28057777777778], [25.718241666666664, -80.27490277777778], [25.720255555555553, -80.2788861111111], [25.71878333333333, -80.27581111111111], [25.72298333333333, -80.27576388888889]];
 
     function haversine(lat1, lon1, lat2, lon2) {
-
-        const R = 6371000;
-
-        const toRad = function(value) {
-            return value * Math.PI / 180;
-        };
-
-        const dLat = toRad(lat2 - lat1);
-        const dLon = toRad(lon2 - lon1);
-
-        const a =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(toRad(lat1)) *
-            Math.cos(toRad(lat2)) *
-            Math.sin(dLon / 2) *
-            Math.sin(dLon / 2);
-
-        const c =
-            2 * Math.atan2(
-                Math.sqrt(a),
-                Math.sqrt(1 - a)
-            );
-
-        return R * c;
+      const R = 6371000;
+      const toRad = x => x * Math.PI / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+      return 2 * R * Math.asin(Math.sqrt(a));
     }
-
-
-    // ---------------------------------------------------------
-    // FIND CLOSEST HYDRANT
-    // ---------------------------------------------------------
 
     function closestHydrant(lat, lon) {
-
-        let minDistance = Infinity;
-        let nearestHydrant = null;
-        let nearestIndex = null;
-
-        hydrants.forEach(function(hydrant, index) {
-
-            const distance = haversine(
-                lat,
-                lon,
-                hydrant[0],
-                hydrant[1]
-            );
-
-            if (distance < minDistance) {
-
-                minDistance = distance;
-
-                nearestHydrant = [
-                    hydrant[0],
-                    hydrant[1],
-                    distance
-                ];
-
-                nearestIndex = index;
-            }
-        });
-
-        return {
-            hydrant: nearestHydrant,
-            index: nearestIndex
-        };
+      let best = null, minDist = Infinity;
+      for (const [hLat, hLon] of hydrants) {
+        const d = haversine(lat, lon, hLat, hLon);
+        if (d < minDist) { minDist = d; best = [hLat, hLon, d]; }
+      }
+      return best;
     }
 
+    // Map
+    const map = L.map("map", { center: [25.72482222222222, -80.279], zoom: 15 });
 
-    // ---------------------------------------------------------
-    // FIRE SIMULATION
-    // ---------------------------------------------------------
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+      maxZoom: 20,
+      subdomains: "abcd",
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    }).addTo(map);
 
-    let fireMarker = null;
-    let fireLine = null;
-    let closestHydrantMarker = null;
-
-    map.on("click", function(event) {
-
-        const fireLat = event.latlng.lat;
-        const fireLon = event.latlng.lng;
-
-        const result = closestHydrant(
-            fireLat,
-            fireLon
-        );
-
-        if (!result.hydrant) {
-            return;
-        }
-
-        const nearest = result.hydrant;
-
-
-        // Remove old simulated fire
-        if (fireMarker) {
-            map.removeLayer(fireMarker);
-        }
-
-        if (fireLine) {
-            map.removeLayer(fireLine);
-        }
-
-        if (closestHydrantMarker) {
-            map.removeLayer(closestHydrantMarker);
-        }
-
-
-        // Fire marker
-        const fireIcon = L.divIcon({
-            className: "",
-            html:
-                '<div style="' +
-                'font-size:30px;' +
-                'transform: translate(-5px,-15px);' +
-                '">🔥</div>',
-            iconSize: [30, 30],
-            iconAnchor: [15, 15]
-        });
-
-        fireMarker = L.marker(
-            [fireLat, fireLon],
-            {
-                icon: fireIcon
-            }
-        ).addTo(map);
-
-
-        fireMarker.bindPopup(
-            "<b>🔥 Simulated Fire</b><br>" +
-            "Closest hydrant: #" +
-            (result.index + 1) +
-            "<br>Distance: " +
-            nearest[2].toFixed(1) +
-            " meters"
-        ).openPopup();
-
-
-        // Orange connection line
-        fireLine = L.polyline(
-            [
-                [fireLat, fireLon],
-                [nearest[0], nearest[1]]
-            ],
-            {
-                color: "orange",
-                weight: 5,
-                opacity: 0.9
-            }
-        ).addTo(map);
-
-
-        // Highlight selected hydrant
-        closestHydrantMarker = L.circleMarker(
-            [nearest[0], nearest[1]],
-            {
-                radius: 10,
-                color: "orange",
-                fillColor: "red",
-                fillOpacity: 1,
-                weight: 4
-            }
-        ).addTo(map);
-
-        closestHydrantMarker.bindPopup(
-            "<b>Closest Fire Hydrant</b><br>" +
-            "Hydrant #" +
-            (result.index + 1) +
-            "<br>Distance from fire: " +
-            nearest[2].toFixed(1) +
-            " meters"
-        );
-
+    // Hydrant markers (clustered)
+    const cluster = L.markerClusterGroup();
+    hydrants.forEach(([lat, lon]) => {
+      L.circleMarker([lat, lon], {
+        radius: 6, color: "red", weight: 3, fillColor: "red", fillOpacity: 0.2
+      }).bindPopup("<b>Hydrant</b>").addTo(cluster);
     });
+    cluster.addTo(map);
 
+    // Minimap
+    new L.Control.MiniMap(
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }),
+      { position: "bottomright", width: 150, height: 150, zoomLevelOffset: -5, toggleDisplay: true }
+    ).addTo(map);
 
-    // ---------------------------------------------------------
-    // MINI MAP
-    // ---------------------------------------------------------
+    // Click = simulated fire -> nearest hydrant
+    let fireMarker = null, fireLine = null;
+    map.on("click", e => {
+      const { lat, lng } = e.latlng;
+      const nearest = closestHydrant(lat, lng);
+      if (!nearest) return;
 
-    const miniMapTiles = L.tileLayer(
-        "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-        {
-            maxZoom: 19,
-            attribution: "&copy; OpenStreetMap contributors"
-        }
-    );
+      if (fireMarker) map.removeLayer(fireMarker);
+      if (fireLine) map.removeLayer(fireLine);
 
-    const miniMap = new L.Control.MiniMap(
-        miniMapTiles,
-        {
-            position: "bottomright",
-            width: 150,
-            height: 150,
-            zoomLevelOffset: -5,
-            toggleDisplay: true
-        }
-    );
-
-    miniMap.addTo(map);
-
-
-    // ---------------------------------------------------------
-    // FIT MAP TO ALL HYDRANTS
-    // ---------------------------------------------------------
-
-    const hydrantBounds = L.latLngBounds(hydrants);
-
-    map.fitBounds(
-        hydrantBounds,
-        {
-            padding: [30, 30]
-        }
-    );
-
-</script>
-
+      fireMarker = L.marker([lat, lng]).addTo(map)
+        .bindPopup("🔥 Fire reported here.<br>Closest hydrant: " + nearest[2].toFixed(1) + " meters away.")
+        .openPopup();
+      fireLine = L.polyline([[lat, lng], [nearest[0], nearest[1]]], { color: "orange" }).addTo(map);
+    });
+  </script>
 </body>
 </html>
