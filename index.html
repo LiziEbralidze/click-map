@@ -8,11 +8,9 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-minimap/3.6.1/Control.MiniMap.css" />
 
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-minimap/3.6.1/Control.MiniMap.js"></script>
 
   <style>
     html, body { height: 100%; margin: 0; padding: 0; }
@@ -60,10 +58,17 @@
     // Map
     const map = L.map("map", { center: [25.72482222222222, -80.279], zoom: 15 });
 
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+    // Keyless light-gray basemap (CARTO now requires an API key)
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
+      maxNativeZoom: 16,
       maxZoom: 20,
-      subdomains: "abcd",
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+      attribution: 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Street labels on top of the gray base
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}", {
+      maxNativeZoom: 16,
+      maxZoom: 20
     }).addTo(map);
 
     // Hydrant markers (clustered)
@@ -74,15 +79,6 @@
       }).bindPopup("<b>Hydrant</b>").addTo(cluster);
     });
     cluster.addTo(map);
-
-    // Minimap
-    new L.Control.MiniMap(
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors'
-      }),
-      { position: "bottomright", width: 150, height: 150, zoomLevelOffset: -5, toggleDisplay: true }
-    ).addTo(map);
 
     // Click = simulated fire -> nearest hydrant
     let fireMarker = null, fireLine = null;
